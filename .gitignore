@@ -1,0 +1,6 @@
+node_modules/
+render/
+preview/
+__pycache__/
+*.blend1
+*.pyc
