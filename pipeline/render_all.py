@@ -86,6 +86,10 @@ if not a.skip_blender and (not only or 'blender' in only):
                                  '--paper', f'{OUT}/paper.png', '--start', str(f0), '--end', str(f1), '--fps', str(FPS),
                                  '--samples', str(BL_SAMPLES), '--scale', str(BL_SCALE)], 'blender.log')
 
+if a.skip_blender:
+    print('arrêt avant le plan Lumière (--skip-blender) : plans navigateur et feuille rendus.')
+    sys.exit(0)
+
 # 5. composition du plan Lumière (raccord navigateur → Cycles)
 if not only or '08_lumiere' in only:
     timing['08_lumiere'] = capture('08_lumiere', T_PULL, 42.0, ['--query', f'root={OUT}'])
