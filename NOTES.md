@@ -139,4 +139,53 @@ Les transitions sont toutes internes à un plan : dans le moteur, les deux monde
 | numpy / Pillow / fontTools | 2.4 / 12.3 / — | feuille de storyboard, planches |
 | ffmpeg | 6.1.1 | encodage |
 
-*(temps de rendu, bilan et limites : ci-dessous)*
+## Temps de rendu (machine : 4 cœurs CPU, sans GPU)
+
+| Plan | Images | Temps | Par image |
+|---|---|---|---|
+| 01_singularite_expansion | 204 | 23,8 min | ≈7 s (flou de mouvement jusqu'à 8 sous-images) |
+| 02_refroidissement | 99 | 6,0 min | ≈3,6 s |
+| 03_glyphes | 127 | 6,3 min | ≈3 s |
+| 04_structures | 156 | 8,3 min | ≈3,2 s |
+| 05_vie_plongee | 132 | 9,5 min | ≈4,3 s |
+| 06_complexite | 160 | 12,5 min | ≈4,7 s (raymarching à 75 %, 12 i/s) |
+| 07_interieur | 130 | 9,2 min | ≈4,2 s |
+| blender (Cycles) | 130 | 246,6 min | 32 à 170 s (≈114 s en moyenne) |
+| 08_lumiere | 130 | 1,7 min | composition |
+| 09_crunch | 144 | 5,8 min | fusion d'images |
+
+Les plans navigateur tournent par deux en parallèle (≈1 h 15 au total). La maquette 480p à 12 i/s complète prend environ 20 min.
+
+## Vérifications
+
+- `ffprobe out/film.mp4` : h264, 1920×1080, `yuv420p`, 24 i/s, 1152 images, 48,000 s, un seul flux (aucun audio), `faststart`.
+- **Boucle** : la dernière image (1151) est exactement l'image source 1 ; l'écart moyen 1151 → 0 (2,25/255) est identique à l'écart 0 → 1. Pas d'image en double, pas de saut.
+- **Déterminisme** : tout dérive de `t` et de la graine 0 ; les simulations sont rejouées depuis leur début. Les plans ont été rendus en processus séparés, sans jonction visible.
+- **Big Crunch** : rampe exponentielle de 1× à ≈28× (pic vers 70 %), puis décélération qui se pose à 1× sur l'image 1. Le profil exact est dans `render/09_crunch/profil.txt`.
+
+## Ce qui a marché
+
+- **Un seul moteur, une seule horloge** : les transitions sont des compositions au sein d'une même fonction, jamais des collages de plans. Le raccord 3 → 4 est exact au pixel : les faces supérieures des colonnes sont l'image de la phase 3, vue par une caméra qui démarre exactement à la position de la poussée 2D.
+- **Le cercle comme fil rouge** : il porte presque tous les raccords (front de refroidissement, anneaux de glyphes, anneaux planétaires, bulbe, iris, bille, cercle au crayon sur la feuille).
+- **La fente en amande** de la faille préfigure l'œil ; l'**iris** devient l'œil de chat d'une bille ; la **feuille de storyboard** est générée à partir des images du film lui-même.
+- **Le raccord navigateur → Cycles** : le disque dans la bille couvre exactement la diagonale du cadre au premier plan, donc la première image Blender reproduit l'image navigateur, puis la caméra sort du verre.
+
+## Limites et choix assumés
+
+- **Cycles en 1440×810, agrandi en 1080p** (bicubique Catmull-Rom dans le compositeur) : en 1080p natif, le plan aurait pris 7 à 8 h. La profondeur de champ macro rend l'agrandissement peu visible.
+- **Taille du film** : en CRF 18, le grain renouvelé à chaque image coûte cher, et le MP4 fait 171 Mo. Il dépasse la limite de 100 Mo de GitHub, il est donc versionné avec **Git LFS** (`.gitattributes`).
+- **Phase 3** : les nœuds de la toile cosmique figés sont très lumineux et forment de grandes taches claires (lisibles, mais moins fines que le reste).
+- **Flash du Big Bang** : une image presque blanche avec un léger dégradé en paliers (8 bits). C'est voulu comme impact, mais ce n'est pas parfait.
+- **Caustiques** : la caustique de la lampe à travers la bille (MNEE) reste discrète à 40 échantillons débruités.
+
+## Plans B
+
+- Navigateur : le Chromium préinstallé (`/opt/pw-browsers`) a fonctionné en WebGL2 logiciel (SwiftShader, rendu flottant disponible). Aucun plan B nécessaire.
+- Blender : `pip install bpy==4.2.0` a fonctionné avec Python 3.11, OIDN compris. Pas de repli Three.js.
+- ffmpeg : celui du système (6.1.1) ; `imageio-ffmpeg` reste en repli dans `assemble.py`.
+- Polices : les woff2 de `@fontsource` sont convertis en TTF par `fontTools` pour Pillow (feuille de storyboard).
+
+## Livrables
+
+- `out/film.mp4`, `out/poster.png` (26,5 s : la planète-ville en cel-shading), `out/contact-sheet.png` (1 image/s), et en bonus `out/color-script.png` (couleur moyenne et dominante de chaque image).
+- Sources : `src/` (moteur), `blender/` (scène Cycles, feuille de storyboard), `pipeline/` (capture, orchestration, Crunch, assemblage), `render.sh`.
