@@ -116,4 +116,27 @@ Chaque plan est une tranche de `renderFrame(t)`, coupée pendant une respiration
 
 Les transitions sont toutes internes à un plan : dans le moteur, les deux mondes coexistent et sont composés image par image (masque de refroidissement, texture des colonnes = image de la phase 3, fente de la faille, disque de la bille).
 
-*(Les sections outils, temps de rendu, bilan et plans B sont complétées en fin de production.)*
+## Pipeline
+
+- **Une commande** : `./render.sh` (film 1080p24 → `out/`) ou `./render.sh --preview` (maquette 854×480 à 12 i/s → `preview/`). Elle installe les dépendances manquantes puis lance `pipeline/render_all.py`.
+- **Rendu déterministe** : `window.renderFrame(t)` (src/main.js) ne dépend que de `t`. Aucun `Math.random`, `Date` ni `performance` ; toute la variation vient de la graine 0 (`src/rng.js`). Les simulations (réaction-diffusion, physarum, essaims) avancent à pas fixe et sont rejouées depuis leur début quand un plan reprend ; les particules sont analytiques.
+- **Capture** : Playwright (`playwright-core`) pilote le Chromium installé dans `/opt/pw-browsers`, en WebGL logiciel (SwiftShader). Chaque image est exportée en PNG depuis le canvas.
+- **Flou de mouvement** : accumulation de 3 à 8 sous-images (obturateur 180°) sur les mouvements rapides (Big Bang, expansion, envol des colonnes, plongée) ; flou natif de Cycles pour le plan Lumière ; fusion d'images pour le Crunch.
+- **Reprise** : chaque plan a son dossier (`render/<plan>/`), avec un fichier `DONE` en fin de plan. Les images existantes sont sautées.
+- **Assemblage** : ffmpeg système (repli sur `imageio-ffmpeg`), H.264 `yuv420p`, CRF 18, `+faststart`, sans audio.
+
+## Outils et versions
+
+| Outil | Version | Usage |
+|---|---|---|
+| Node.js | 22.22 | moteur, capture |
+| three.js | 0.186.1 | 3D, passes plein écran |
+| playwright-core | 1.63.0 | navigateur sans tête |
+| Chromium | 141.0.7390 (SwiftShader) | rendu WebGL2 logiciel |
+| @fontsource | jetbrains-mono, major-mono-display, caveat | glyphes, annotations manuscrites |
+| Python | 3.11 | orchestration, Crunch, assemblage |
+| bpy (Blender) | 4.2.0 | Cycles CPU + OpenImageDenoise |
+| numpy / Pillow / fontTools | 2.4 / 12.3 / — | feuille de storyboard, planches |
+| ffmpeg | 6.1.1 | encodage |
+
+*(temps de rendu, bilan et limites : ci-dessous)*
