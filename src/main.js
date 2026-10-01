@@ -12,7 +12,7 @@ import { createStructures } from './layers/structures.js';
 import { createComplexity, STYLE } from './layers/complexity.js';
 
 // les polices doivent être chargées avant de dessiner l'atlas de glyphes
-await Promise.all(['700 64px JB', '400 64px JB', '64px MMD', '700 64px Caveat'].map((f) => document.fonts.load(f, '0A∅')));
+await Promise.all(['700 64px JB', '400 64px JB', '700 64px Caveat'].map((f) => document.fonts.load(f, '0A∅')));
 
 const params = new URLSearchParams(location.search);
 const w = +(params.get('w') || 1920), h = +(params.get('h') || 1080);

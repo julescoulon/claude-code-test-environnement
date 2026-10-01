@@ -26,7 +26,16 @@ const server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
-const exe = process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+// Chromium : variable CHROME, sinon le Chromium installé par Playwright (npx playwright install chromium)
+let exe = process.env.CHROME;
+if (!exe) {
+  const known = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+  try { exe = fs.existsSync(known) ? known : chromium.executablePath(); } catch { exe = undefined; }
+}
+if (!exe || !fs.existsSync(exe)) {
+  console.error('Chromium introuvable : lancez `npx playwright install chromium` ou définissez CHROME=/chemin/vers/chrome');
+  process.exit(2);
+}
 const browser = await chromium.launch({
   executablePath: exe,
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--disable-gpu-sandbox', '--js-flags=--max-old-space-size=6000'],

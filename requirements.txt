@@ -1,6 +1,7 @@
+# Python 3.11 obligatoire (bpy 4.2 n'existe que pour 3.11)
 bpy==4.2.0
-numpy
-pillow
-imageio-ffmpeg
-fonttools
+numpy==2.4.6
+pillow==12.3.0
+imageio-ffmpeg==0.6.0
+fonttools==4.66.1
 brotli
